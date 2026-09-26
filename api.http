@@ -1,0 +1,78 @@
+### IntelliJ / VS Code REST Client requests against the gateway
+@api = http://localhost:8080/api
+@dealer = TQ-BLR-IND
+
+### Dealers and bays
+GET {{api}}/dealers
+
+### Service catalogue (durations per vehicle type)
+GET {{api}}/dealers/service-types
+
+### Bike availability tomorrow (change the date)
+GET {{api}}/appointments/availability?dealerId={{dealer}}&vehicleType=BIKE&serviceType=GENERAL_SERVICE&date=2026-12-01
+
+### Book a bike
+POST {{api}}/appointments
+Content-Type: application/json
+Idempotency-Key: {{$uuid}}
+
+{
+  "dealerId": "{{dealer}}",
+  "customerName": "Asha Rao",
+  "customerPhone": "9845012345",
+  "vehicleType": "BIKE",
+  "vehicleNumber": "KA03 HB 1234",
+  "vehicleMake": "Royal Enfield",
+  "vehicleModel": "Classic 350",
+  "serviceType": "GENERAL_SERVICE",
+  "slotStart": "2026-12-01T10:00"
+}
+
+### Book a car
+POST {{api}}/appointments
+Content-Type: application/json
+
+{
+  "dealerId": "{{dealer}}",
+  "customerName": "Vikram Shetty",
+  "customerPhone": "9845098765",
+  "vehicleType": "CAR",
+  "vehicleNumber": "KA01 MJ 4321",
+  "vehicleMake": "Hyundai",
+  "vehicleModel": "Creta",
+  "serviceType": "WHEEL_ALIGNMENT",
+  "slotStart": "2026-12-01T11:00"
+}
+
+### Check in (replace id)
+POST {{api}}/appointments/REPLACE_ID/check-in
+Content-Type: application/json
+
+{ "odometerKm": 18500 }
+
+### Repair orders at the dealer
+GET {{api}}/repair-orders?dealerId={{dealer}}
+
+### Assign / request parts / complete (replace id)
+POST {{api}}/repair-orders/REPLACE_ID/assign
+Content-Type: application/json
+
+{ "technician": "Ravi K" }
+
+###
+POST {{api}}/repair-orders/REPLACE_ID/parts
+Content-Type: application/json
+
+{ "lines": [ { "sku": "OIL-10W30-1L", "quantity": 1 }, { "sku": "SPARK-PLUG-BIKE", "quantity": 1 } ] }
+
+###
+POST {{api}}/repair-orders/REPLACE_ID/complete
+
+### Bike parts (includes universal consumables)
+GET {{api}}/parts?dealerId={{dealer}}&fitment=BIKE
+
+### Low stock
+GET {{api}}/parts/low-stock?dealerId={{dealer}}
+
+### Notifications
+GET {{api}}/notifications?limit=20

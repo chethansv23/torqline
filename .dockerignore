@@ -1,0 +1,8 @@
+**/target
+.git
+.idea
+docs
+loadtest
+scripts
+*.md
+web

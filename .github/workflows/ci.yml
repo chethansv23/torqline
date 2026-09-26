@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Unit and integration tests (Testcontainers)
+        run: ./mvnw -B verify
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Web UI tests, type-check and build
+        run: cd web && npm ci && npm test && npm run build
+      - name: Build service images
+        run: docker compose build
