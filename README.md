@@ -215,6 +215,8 @@ torqline/
 | [Architecture decisions](docs/adr) | Why the exclusion constraint, the outbox and database-per-service |
 | [AI review log](docs/AI-REVIEW.md) | What AI suggested, what was accepted or rejected, and the bugs it caused |
 | [Article](docs/ARTICLE.md) | The story of building it, written as a blog post |
+| [Interview guide](docs/INTERVIEW-GUIDE.md) | Likely interview questions with answers |
+| [Everything as one PDF](docs/Torqline-System-Design.pdf) | All of the above in a single printable file |
 
 ## Troubleshooting
 
