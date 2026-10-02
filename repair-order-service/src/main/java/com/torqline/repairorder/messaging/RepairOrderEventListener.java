@@ -1,9 +1,9 @@
 package com.torqline.repairorder.messaging;
 
+import com.torqline.common.constants.Topics;
 import com.torqline.common.events.AppointmentEvents.AppointmentCheckedIn;
 import com.torqline.common.events.InventoryEvents.PartsReservationFailed;
 import com.torqline.common.events.InventoryEvents.PartsReserved;
-import com.torqline.common.events.Topics;
 import com.torqline.common.messaging.IdempotencyGuard;
 import com.torqline.common.messaging.InboundEvent;
 import com.torqline.repairorder.order.RepairOrderService;

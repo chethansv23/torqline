@@ -1,5 +1,7 @@
 package com.torqline.appointment.appointment;
 
+import com.torqline.appointment.dto.BookAppointmentRequest;
+import com.torqline.appointment.dto.BookingResult;
 import com.torqline.common.domain.ServiceType;
 import com.torqline.common.domain.VehicleType;
 import com.torqline.common.web.ApiException;
@@ -147,8 +149,8 @@ class BookingConcurrencyTest {
         LocalDateTime slot = slotInDays(8, 11);
         String key = UUID.randomUUID().toString();
 
-        AppointmentService.BookingResult first = service.book(bikeService(slot, "11111"), key);
-        AppointmentService.BookingResult retry = service.book(bikeService(slot, "11111"), key);
+        BookingResult first = service.book(bikeService(slot, "11111"), key);
+        BookingResult retry = service.book(bikeService(slot, "11111"), key);
 
         assertThat(first.replayed()).isFalse();
         assertThat(retry.replayed()).isTrue();

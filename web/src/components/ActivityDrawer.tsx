@@ -1,10 +1,11 @@
 import { api } from '../api';
+import { POLL_INTERVAL_MS } from '../constants';
 import { ago, humanize } from '../format';
 import { usePolling } from '../hooks';
 
 /** Everything notification-service "sent", newest first: proof that events flowed through Kafka. */
 export function ActivityDrawer({ onClose }: { onClose: () => void }) {
-  const { data } = usePolling(() => api.notifications(40), 2000, []);
+  const { data } = usePolling(() => api.notifications(), POLL_INTERVAL_MS.activityDrawer, []);
 
   return (
     <aside className="drawer" aria-label="Activity">

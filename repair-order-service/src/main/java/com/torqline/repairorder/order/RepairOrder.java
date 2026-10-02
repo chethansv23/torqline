@@ -5,6 +5,7 @@ import com.torqline.common.domain.VehicleType;
 import com.torqline.common.events.AppointmentEvents.AppointmentCheckedIn;
 import com.torqline.common.events.InventoryEvents.ReservedLine;
 import com.torqline.common.web.ApiException;
+import com.torqline.repairorder.constants.RepairOrderErrorCodes;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -25,12 +26,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.torqline.repairorder.constants.RepairOrderConstants.GST_RATE;
+
 @Entity
 @Table(name = "repair_order")
 public class RepairOrder {
-
-    /** GST on vehicle servicing in India. */
-    static final BigDecimal TAX_RATE = new BigDecimal("0.18");
 
     @Id
     private UUID id;
@@ -135,7 +135,7 @@ public class RepairOrder {
         this.partsAmount = partLines.stream().map(PartLine::amount).reduce(BigDecimal.ZERO, BigDecimal::add)
                 .setScale(2, RoundingMode.HALF_UP);
         BigDecimal subtotal = labourAmount.add(partsAmount);
-        this.taxAmount = subtotal.multiply(TAX_RATE).setScale(2, RoundingMode.HALF_UP);
+        this.taxAmount = subtotal.multiply(GST_RATE).setScale(2, RoundingMode.HALF_UP);
         this.totalAmount = subtotal.add(taxAmount);
         this.closedAt = Instant.now();
     }
@@ -157,7 +157,7 @@ public class RepairOrder {
 
     private void moveTo(RepairOrderStatus target) {
         if (!status.canMoveTo(target)) {
-            throw ApiException.conflict("INVALID_TRANSITION",
+            throw ApiException.conflict(RepairOrderErrorCodes.INVALID_TRANSITION,
                     "Repair order " + roNumber + " cannot go from " + status + " to " + target);
         }
         this.status = target;

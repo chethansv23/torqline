@@ -1,12 +1,13 @@
 package com.torqline.inventory.part;
 
+import com.torqline.common.constants.AggregateTypes;
+import com.torqline.common.constants.Topics;
 import com.torqline.common.events.InventoryEvents.PartLowStock;
 import com.torqline.common.events.InventoryEvents.PartsReservationFailed;
 import com.torqline.common.events.InventoryEvents.PartsReserved;
 import com.torqline.common.events.InventoryEvents.ReservedLine;
 import com.torqline.common.events.RepairOrderEvents.PartQuantity;
 import com.torqline.common.events.RepairOrderEvents.PartsReservationRequested;
-import com.torqline.common.events.Topics;
 import com.torqline.common.messaging.OutboxWriter;
 import com.torqline.common.web.ApiException;
 import com.torqline.inventory.reservation.Reservation;
@@ -66,7 +67,7 @@ public class InventoryService {
         if (!problems.isEmpty()) {
             String reason = String.join("; ", problems);
             log.info("Rejecting parts request {} for RO {}: {}", request.requestId(), request.repairOrderId(), reason);
-            outbox.append(Topics.INVENTORY_EVENTS, "Reservation", request.repairOrderId(),
+            outbox.append(Topics.INVENTORY_EVENTS, AggregateTypes.RESERVATION, request.repairOrderId(),
                     new PartsReservationFailed(request.requestId(), request.repairOrderId(), reason));
             return;
         }
@@ -80,7 +81,7 @@ public class InventoryService {
             reserved.add(new ReservedLine(sku, part.getName(), qty, part.getUnitPrice()));
         });
         reservations.save(new Reservation(request.requestId(), request.repairOrderId(), request.dealerId(), lines));
-        outbox.append(Topics.INVENTORY_EVENTS, "Reservation", request.repairOrderId(),
+        outbox.append(Topics.INVENTORY_EVENTS, AggregateTypes.RESERVATION, request.repairOrderId(),
                 new PartsReserved(request.requestId(), request.repairOrderId(), reserved));
         log.info("Reserved {} line(s) for RO {}", lines.size(), request.repairOrderId());
     }
@@ -107,7 +108,7 @@ public class InventoryService {
                 if (outcome == ReservationStatus.CONSUMED) {
                     part.consume(line.quantity());
                     if (part.isLowStock()) {
-                        outbox.append(Topics.INVENTORY_EVENTS, "Part", part.getDealerId() + ":" + part.getSku(),
+                        outbox.append(Topics.INVENTORY_EVENTS, AggregateTypes.PART, part.getDealerId() + ":" + part.getSku(),
                                 new PartLowStock(part.getDealerId(), part.getSku(), part.getName(),
                                         part.available(), part.getReorderLevel()));
                     }

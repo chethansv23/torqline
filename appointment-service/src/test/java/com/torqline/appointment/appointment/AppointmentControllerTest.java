@@ -1,5 +1,7 @@
 package com.torqline.appointment.appointment;
 
+import com.torqline.appointment.dto.AppointmentResponse;
+import com.torqline.appointment.dto.BookingResult;
 import com.torqline.common.domain.ServiceType;
 import com.torqline.common.domain.VehicleType;
 import com.torqline.common.web.ApiException;
@@ -59,7 +61,7 @@ class AppointmentControllerTest {
     @Test
     void newBookingReturns201() throws Exception {
         UUID id = UUID.randomUUID();
-        when(service.book(any(), eq("key-1"))).thenReturn(new AppointmentService.BookingResult(response(id), false));
+        when(service.book(any(), eq("key-1"))).thenReturn(new BookingResult(response(id), false));
 
         mvc.perform(post("/api/appointments").contentType(MediaType.APPLICATION_JSON)
                         .header("Idempotency-Key", "key-1").content(VALID_BODY))
@@ -71,7 +73,7 @@ class AppointmentControllerTest {
     @Test
     void replayedBookingReturns200() throws Exception {
         when(service.book(any(), eq("key-1")))
-                .thenReturn(new AppointmentService.BookingResult(response(UUID.randomUUID()), true));
+                .thenReturn(new BookingResult(response(UUID.randomUUID()), true));
 
         mvc.perform(post("/api/appointments").contentType(MediaType.APPLICATION_JSON)
                         .header("Idempotency-Key", "key-1").content(VALID_BODY))

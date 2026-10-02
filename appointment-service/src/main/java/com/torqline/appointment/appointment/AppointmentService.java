@@ -1,18 +1,24 @@
 package com.torqline.appointment.appointment;
 
+import com.torqline.appointment.constants.AppointmentErrorCodes;
 import com.torqline.appointment.dealer.Dealer;
 import com.torqline.appointment.dealer.DealerRepository;
 import com.torqline.appointment.dealer.ServiceBay;
 import com.torqline.appointment.dealer.ServiceBayRepository;
+import com.torqline.appointment.dto.AppointmentResponse;
+import com.torqline.appointment.dto.Availability;
+import com.torqline.appointment.dto.BookAppointmentRequest;
+import com.torqline.appointment.dto.BookingResult;
 import com.torqline.appointment.slot.BusyInterval;
 import com.torqline.appointment.slot.BusySlotCache;
 import com.torqline.appointment.slot.SlotGrid;
+import com.torqline.common.constants.AggregateTypes;
+import com.torqline.common.constants.Topics;
 import com.torqline.common.domain.ServiceType;
 import com.torqline.common.domain.VehicleType;
 import com.torqline.common.events.AppointmentEvents.AppointmentBooked;
 import com.torqline.common.events.AppointmentEvents.AppointmentCancelled;
 import com.torqline.common.events.AppointmentEvents.AppointmentCheckedIn;
-import com.torqline.common.events.Topics;
 import com.torqline.common.messaging.OutboxWriter;
 import com.torqline.common.web.ApiException;
 import org.slf4j.Logger;
@@ -37,24 +43,14 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static com.torqline.appointment.constants.AppointmentConstants.BAY_LOCK_NAMESPACE;
+import static com.torqline.appointment.constants.AppointmentConstants.SQLSTATE_EXCLUSION_VIOLATION;
+import static com.torqline.appointment.constants.AppointmentConstants.SQLSTATE_UNIQUE_VIOLATION;
+
 @Service
 public class AppointmentService {
 
     private static final Logger log = LoggerFactory.getLogger(AppointmentService.class);
-
-    /** Postgres SQLSTATE for exclusion_violation: the bay already has an overlapping booking. */
-    private static final String EXCLUSION_VIOLATION = "23P01";
-    /** Namespace for {@code pg_advisory_xact_lock(namespace, bayId)} so these locks cannot collide with others. */
-    private static final int BAY_LOCK_NAMESPACE = 7001;
-    /** Postgres SQLSTATE for unique_violation: here, a concurrent request with the same Idempotency-Key. */
-    private static final String UNIQUE_VIOLATION = "23505";
-
-    public record BookingResult(AppointmentResponse appointment, boolean replayed) {
-    }
-
-    public record Availability(String dealerId, LocalDate date, VehicleType vehicleType, ServiceType serviceType,
-                               long durationMinutes, List<SlotGrid.Slot> slots) {
-    }
 
     private final AppointmentRepository appointments;
     private final DealerRepository dealers;
@@ -108,7 +104,7 @@ public class AppointmentService {
 
         List<ServiceBay> candidates = bays.findByDealerIdAndVehicleTypeOrderById(dealer.getId(), request.vehicleType());
         if (candidates.isEmpty()) {
-            throw ApiException.badRequest("NO_BAYS", dealer.getName() + " has no " + request.vehicleType() + " bays");
+            throw ApiException.badRequest(AppointmentErrorCodes.NO_BAYS, dealer.getName() + " has no " + request.vehicleType() + " bays");
         }
         // Try bays that look free first; the constraint still guards against races.
         Set<Long> busyBays = busyIntervals(dealer, request.slotStart().toLocalDate()).stream()
@@ -123,17 +119,17 @@ public class AppointmentService {
                 log.info("Booked appointment {} on bay {} at {}", saved.getId(), bay.getName(), request.slotStart());
                 return new BookingResult(AppointmentResponse.of(saved, dealer.zone()), false);
             } catch (DataIntegrityViolationException e) {
-                if (hasSqlState(e, EXCLUSION_VIOLATION)) {
+                if (hasSqlState(e, SQLSTATE_EXCLUSION_VIOLATION)) {
                     log.debug("Bay {} taken for {}, trying next", bay.getId(), request.slotStart());
                     continue;
                 }
-                if (idempotencyKey != null && hasSqlState(e, UNIQUE_VIOLATION)) {
+                if (idempotencyKey != null && hasSqlState(e, SQLSTATE_UNIQUE_VIOLATION)) {
                     return replay(appointments.findByIdempotencyKey(idempotencyKey).orElseThrow(() -> e));
                 }
                 throw e;
             }
         }
-        throw ApiException.conflict("SLOT_UNAVAILABLE",
+        throw ApiException.conflict(AppointmentErrorCodes.SLOT_UNAVAILABLE,
                 "No " + request.vehicleType() + " bay is free at " + request.slotStart() + " for " + request.serviceType());
     }
 
@@ -149,7 +145,7 @@ public class AppointmentService {
         jdbc.query("select pg_advisory_xact_lock(?, ?)", rs -> null, BAY_LOCK_NAMESPACE, bay.getId().intValue());
         Appointment appointment = appointments.saveAndFlush(
                 new Appointment(bay.getDealerId(), bay.getId(), request, start, end, key));
-        outbox.append(Topics.APPOINTMENT_EVENTS, "Appointment", appointment.getId(), new AppointmentBooked(
+        outbox.append(Topics.APPOINTMENT_EVENTS, AggregateTypes.APPOINTMENT, appointment.getId(), new AppointmentBooked(
                 appointment.getId(), appointment.getDealerId(), appointment.getCustomerName(),
                 appointment.getCustomerPhone(), appointment.getVehicleType(), appointment.getVehicleNumber(),
                 appointment.getServiceType(), start, end));
@@ -171,7 +167,7 @@ public class AppointmentService {
     public AppointmentResponse checkIn(UUID id, Integer odometerKm) {
         return update(id, a -> {
             a.checkIn(odometerKm);
-            outbox.append(Topics.APPOINTMENT_EVENTS, "Appointment", a.getId(), new AppointmentCheckedIn(
+            outbox.append(Topics.APPOINTMENT_EVENTS, AggregateTypes.APPOINTMENT, a.getId(), new AppointmentCheckedIn(
                     a.getId(), a.getDealerId(), a.getCustomerName(), a.getCustomerPhone(), a.getVehicleType(),
                     a.getVehicleNumber(), a.getVehicleMake(), a.getVehicleModel(), a.getServiceType(), odometerKm));
         });
@@ -180,7 +176,7 @@ public class AppointmentService {
     public AppointmentResponse cancel(UUID id, String reason) {
         return update(id, a -> {
             a.cancel(reason);
-            outbox.append(Topics.APPOINTMENT_EVENTS, "Appointment", a.getId(), new AppointmentCancelled(
+            outbox.append(Topics.APPOINTMENT_EVENTS, AggregateTypes.APPOINTMENT, a.getId(), new AppointmentCancelled(
                     a.getId(), a.getDealerId(), a.getCustomerName(), a.getCustomerPhone(), a.getSlotStart(), reason));
         });
     }
@@ -198,19 +194,19 @@ public class AppointmentService {
 
     private Instant validateSlot(Dealer dealer, LocalDateTime localStart, Duration duration) {
         if (!SlotGrid.isOnGrid(localStart.toLocalTime())) {
-            throw ApiException.badRequest("OFF_GRID", "Slots start on the hour or half hour");
+            throw ApiException.badRequest(AppointmentErrorCodes.OFF_GRID, "Slots start on the hour or half hour");
         }
         LocalDateTime localEnd = localStart.plus(duration);
         if (localStart.toLocalTime().isBefore(dealer.getOpenTime())
                 || !localEnd.toLocalDate().equals(localStart.toLocalDate())
                 || localEnd.toLocalTime().isAfter(dealer.getCloseTime())) {
-            throw ApiException.badRequest("OUTSIDE_HOURS", dealer.getName() + " is open "
+            throw ApiException.badRequest(AppointmentErrorCodes.OUTSIDE_HOURS, dealer.getName() + " is open "
                     + dealer.getOpenTime() + "-" + dealer.getCloseTime() + " and this job takes "
                     + duration.toMinutes() + " minutes");
         }
         Instant start = localStart.atZone(dealer.zone()).toInstant();
         if (start.isBefore(clock.instant())) {
-            throw ApiException.badRequest("SLOT_IN_PAST", "Cannot book a slot in the past");
+            throw ApiException.badRequest(AppointmentErrorCodes.SLOT_IN_PAST, "Cannot book a slot in the past");
         }
         return start;
     }
@@ -227,7 +223,7 @@ public class AppointmentService {
 
     private static Duration durationOf(ServiceType serviceType, VehicleType vehicleType) {
         if (!serviceType.supports(vehicleType)) {
-            throw ApiException.badRequest("SERVICE_NOT_OFFERED", serviceType + " is not offered for a " + vehicleType);
+            throw ApiException.badRequest(AppointmentErrorCodes.SERVICE_NOT_OFFERED, serviceType + " is not offered for a " + vehicleType);
         }
         return serviceType.durationFor(vehicleType);
     }

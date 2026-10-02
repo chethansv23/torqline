@@ -10,20 +10,20 @@ import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
+import static com.torqline.gateway.constants.GatewayConstants.REQUEST_ID_HEADER;
+
 /** Stamps every request with an X-Request-Id (reusing the caller's if present) so logs can be correlated across services. */
 @Component
 public class RequestIdFilter implements GlobalFilter, Ordered {
 
-    static final String HEADER = "X-Request-Id";
-
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        String requestId = exchange.getRequest().getHeaders().getFirst(HEADER);
+        String requestId = exchange.getRequest().getHeaders().getFirst(REQUEST_ID_HEADER);
         if (requestId == null || requestId.isBlank()) {
             requestId = UUID.randomUUID().toString();
         }
-        ServerHttpRequest request = exchange.getRequest().mutate().header(HEADER, requestId).build();
-        exchange.getResponse().getHeaders().set(HEADER, requestId);
+        ServerHttpRequest request = exchange.getRequest().mutate().header(REQUEST_ID_HEADER, requestId).build();
+        exchange.getResponse().getHeaders().set(REQUEST_ID_HEADER, requestId);
         return chain.filter(exchange.mutate().request(request).build());
     }
 

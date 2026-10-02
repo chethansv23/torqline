@@ -1,6 +1,7 @@
 package com.torqline.inventory.part;
 
 import com.torqline.common.web.ApiException;
+import com.torqline.inventory.constants.InventoryErrorCodes;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -61,7 +62,7 @@ public class Part {
 
     void restock(int quantity) {
         if (quantity <= 0) {
-            throw ApiException.badRequest("INVALID_QUANTITY", "Restock quantity must be positive");
+            throw ApiException.badRequest(InventoryErrorCodes.INVALID_QUANTITY, "Restock quantity must be positive");
         }
         onHand += quantity;
     }

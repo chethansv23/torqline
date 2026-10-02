@@ -1,3 +1,5 @@
+import { API_BASE_URL, IDEMPOTENCY_KEY_HEADER, NOTIFICATIONS_LIMIT } from './constants';
+
 export type VehicleType = 'CAR' | 'BIKE';
 export type Fitment = 'CAR' | 'BIKE' | 'UNIVERSAL';
 
@@ -135,8 +137,8 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, init?: RequestInit & { idempotencyKey?: string }): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (init?.idempotencyKey) headers['Idempotency-Key'] = init.idempotencyKey;
-  const res = await fetch(`/api${path}`, { ...init, headers });
+  if (init?.idempotencyKey) headers[IDEMPOTENCY_KEY_HEADER] = init.idempotencyKey;
+  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
   const text = await res.text();
   const body = text ? JSON.parse(text) : undefined;
   if (!res.ok) {
@@ -174,5 +176,5 @@ export const api = {
   restock: (dealerId: string, sku: string, quantity: number) =>
     post<Part>(`/parts/${dealerId}/${sku}/restock`, { quantity }),
 
-  notifications: (limit = 40) => request<Notification[]>(`/notifications?limit=${limit}`),
+  notifications: (limit = NOTIFICATIONS_LIMIT) => request<Notification[]>(`/notifications?limit=${limit}`),
 };

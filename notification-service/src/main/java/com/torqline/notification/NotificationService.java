@@ -12,11 +12,10 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.util.Optional;
 
+import static com.torqline.notification.constants.NotificationConstants.MANAGER_EMAIL_FORMAT;
+
 @Service
 public class NotificationService {
-
-    /** Service-manager inbox that receives stock alerts, e.g. manager+TQ-BLR-IND@torqline.dev */
-    private static final String MANAGER_EMAIL = "manager+%s@torqline.dev";
 
     private record Outgoing(Channel channel, String recipient, String message) {
     }
@@ -63,7 +62,7 @@ public class NotificationService {
         }
         if (event.is(PartLowStock.class)) {
             var e = event.as(mapper, PartLowStock.class);
-            return Optional.of(new Outgoing(Channel.EMAIL, MANAGER_EMAIL.formatted(e.dealerId()),
+            return Optional.of(new Outgoing(Channel.EMAIL, MANAGER_EMAIL_FORMAT.formatted(e.dealerId()),
                     MessageTemplates.lowStock(e)));
         }
         return Optional.empty();

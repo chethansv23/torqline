@@ -1,11 +1,15 @@
 package com.torqline.appointment.appointment;
 
+import com.torqline.appointment.dto.AppointmentResponse;
+import com.torqline.appointment.dto.Availability;
+import com.torqline.appointment.dto.BookAppointmentRequest;
+import com.torqline.appointment.dto.BookingResult;
+import com.torqline.appointment.dto.CancelRequest;
+import com.torqline.appointment.dto.CheckInRequest;
+import com.torqline.common.constants.ApiHeaders;
 import com.torqline.common.domain.ServiceType;
 import com.torqline.common.domain.VehicleType;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -27,12 +31,6 @@ import java.util.UUID;
 @RequestMapping("/api/appointments")
 public class AppointmentController {
 
-    public record CheckInRequest(@Min(0) @Max(2_000_000) Integer odometerKm) {
-    }
-
-    public record CancelRequest(@NotBlank @Size(max = 200) String reason) {
-    }
-
     private final AppointmentService service;
 
     public AppointmentController(AppointmentService service) {
@@ -40,7 +38,7 @@ public class AppointmentController {
     }
 
     @GetMapping("/availability")
-    public AppointmentService.Availability availability(
+    public Availability availability(
             @RequestParam String dealerId, @RequestParam VehicleType vehicleType,
             @RequestParam ServiceType serviceType,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
@@ -54,8 +52,8 @@ public class AppointmentController {
     @PostMapping
     public ResponseEntity<AppointmentResponse> book(
             @Valid @RequestBody BookAppointmentRequest request,
-            @RequestHeader(name = "Idempotency-Key", required = false) @Size(max = 80) String idempotencyKey) {
-        AppointmentService.BookingResult result = service.book(request, idempotencyKey);
+            @RequestHeader(name = ApiHeaders.IDEMPOTENCY_KEY, required = false) @Size(max = 80) String idempotencyKey) {
+        BookingResult result = service.book(request, idempotencyKey);
         return ResponseEntity.status(result.replayed() ? HttpStatus.OK : HttpStatus.CREATED).body(result.appointment());
     }
 

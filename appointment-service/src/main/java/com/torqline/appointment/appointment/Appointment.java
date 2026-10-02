@@ -1,5 +1,7 @@
 package com.torqline.appointment.appointment;
 
+import com.torqline.appointment.constants.AppointmentErrorCodes;
+import com.torqline.appointment.dto.BookAppointmentRequest;
 import com.torqline.common.domain.ServiceType;
 import com.torqline.common.domain.VehicleType;
 import com.torqline.common.web.ApiException;
@@ -85,7 +87,7 @@ public class Appointment {
 
     private void requireBooked(String action) {
         if (status != AppointmentStatus.BOOKED) {
-            throw ApiException.conflict("INVALID_STATE", "Cannot " + action + " an appointment that is " + status);
+            throw ApiException.conflict(AppointmentErrorCodes.INVALID_STATE, "Cannot " + action + " an appointment that is " + status);
         }
     }
 

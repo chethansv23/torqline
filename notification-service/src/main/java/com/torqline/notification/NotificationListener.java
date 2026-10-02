@@ -1,6 +1,6 @@
 package com.torqline.notification;
 
-import com.torqline.common.events.Topics;
+import com.torqline.common.constants.Topics;
 import com.torqline.common.messaging.IdempotencyGuard;
 import com.torqline.common.messaging.InboundEvent;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

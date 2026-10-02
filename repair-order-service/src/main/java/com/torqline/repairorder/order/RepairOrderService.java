@@ -1,5 +1,7 @@
 package com.torqline.repairorder.order;
 
+import com.torqline.common.constants.AggregateTypes;
+import com.torqline.common.constants.Topics;
 import com.torqline.common.events.AppointmentEvents.AppointmentCheckedIn;
 import com.torqline.common.events.InventoryEvents.PartsReservationFailed;
 import com.torqline.common.events.InventoryEvents.PartsReserved;
@@ -8,7 +10,6 @@ import com.torqline.common.events.RepairOrderEvents.PartsReservationRequested;
 import com.torqline.common.events.RepairOrderEvents.RepairOrderCancelled;
 import com.torqline.common.events.RepairOrderEvents.RepairOrderCompleted;
 import com.torqline.common.events.RepairOrderEvents.RepairOrderCreated;
-import com.torqline.common.events.Topics;
 import com.torqline.common.messaging.OutboxWriter;
 import com.torqline.common.web.ApiException;
 import org.slf4j.Logger;
@@ -23,11 +24,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.torqline.repairorder.constants.RepairOrderConstants.RO_NUMBER_FORMAT;
+import static com.torqline.repairorder.constants.RepairOrderConstants.RO_NUMBER_SEQUENCE_QUERY;
+
 @Service
 public class RepairOrderService {
 
     private static final Logger log = LoggerFactory.getLogger(RepairOrderService.class);
-    private static final String AGGREGATE = "RepairOrder";
 
     private final RepairOrderRepository orders;
     private final OutboxWriter outbox;
@@ -46,7 +49,7 @@ public class RepairOrderService {
             return;
         }
         RepairOrder ro = orders.save(RepairOrder.openFrom(event, nextRoNumber()));
-        outbox.append(Topics.REPAIR_ORDER_EVENTS, AGGREGATE, ro.getId(), new RepairOrderCreated(ro.getId(),
+        outbox.append(Topics.REPAIR_ORDER_EVENTS, AggregateTypes.REPAIR_ORDER, ro.getId(), new RepairOrderCreated(ro.getId(),
                 ro.getRoNumber(), ro.getAppointmentId(), ro.getDealerId(), ro.getCustomerName(),
                 ro.getCustomerPhone(), ro.getVehicleNumber()));
         log.info("Opened {} for {} {}", ro.getRoNumber(), ro.getVehicleType(), ro.getVehicleNumber());
@@ -79,7 +82,7 @@ public class RepairOrderService {
         lines.forEach(l -> merged.merge(l.sku().trim().toUpperCase(), l.quantity(), Integer::sum));
         UUID requestId = UUID.randomUUID();
         ro.requestParts(requestId, merged);
-        outbox.append(Topics.REPAIR_ORDER_EVENTS, AGGREGATE, ro.getId(), new PartsReservationRequested(requestId,
+        outbox.append(Topics.REPAIR_ORDER_EVENTS, AggregateTypes.REPAIR_ORDER, ro.getId(), new PartsReservationRequested(requestId,
                 ro.getId(), ro.getDealerId(),
                 merged.entrySet().stream().map(e -> new PartQuantity(e.getKey(), e.getValue())).toList()));
         return ro;
@@ -107,7 +110,7 @@ public class RepairOrderService {
     public RepairOrder complete(UUID id) {
         RepairOrder ro = get(id);
         ro.complete();
-        outbox.append(Topics.REPAIR_ORDER_EVENTS, AGGREGATE, ro.getId(), new RepairOrderCompleted(ro.getId(),
+        outbox.append(Topics.REPAIR_ORDER_EVENTS, AggregateTypes.REPAIR_ORDER, ro.getId(), new RepairOrderCompleted(ro.getId(),
                 ro.getRoNumber(), ro.getDealerId(), ro.getCustomerName(), ro.getCustomerPhone(),
                 ro.getVehicleNumber(), ro.getTotalAmount()));
         return ro;
@@ -118,13 +121,13 @@ public class RepairOrderService {
     public RepairOrder cancel(UUID id, String reason) {
         RepairOrder ro = get(id);
         ro.cancel(reason);
-        outbox.append(Topics.REPAIR_ORDER_EVENTS, AGGREGATE, ro.getId(),
+        outbox.append(Topics.REPAIR_ORDER_EVENTS, AggregateTypes.REPAIR_ORDER, ro.getId(),
                 new RepairOrderCancelled(ro.getId(), ro.getDealerId(), reason));
         return ro;
     }
 
     private String nextRoNumber() {
-        Long seq = jdbc.queryForObject("select nextval('ro_number_seq')", Long.class);
-        return "RO-%d-%06d".formatted(Year.now().getValue(), seq);
+        Long seq = jdbc.queryForObject(RO_NUMBER_SEQUENCE_QUERY, Long.class);
+        return RO_NUMBER_FORMAT.formatted(Year.now().getValue(), seq);
     }
 }
