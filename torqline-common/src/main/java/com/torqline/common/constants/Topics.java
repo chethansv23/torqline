@@ -1,7 +1,8 @@
-package com.torqline.common.events;
+package com.torqline.common.constants;
 
 import java.util.List;
 
+/** Kafka topic names. Events are keyed by aggregate id so one aggregate's events stay in order. */
 public final class Topics {
     public static final String APPOINTMENT_EVENTS = "torqline.appointment.events";
     public static final String REPAIR_ORDER_EVENTS = "torqline.repair-order.events";

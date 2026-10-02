@@ -1,11 +1,12 @@
 package com.torqline.inventory.part;
 
+import com.torqline.common.constants.AggregateTypes;
+import com.torqline.common.constants.Topics;
 import com.torqline.common.events.InventoryEvents.PartLowStock;
 import com.torqline.common.events.InventoryEvents.PartsReservationFailed;
 import com.torqline.common.events.InventoryEvents.PartsReserved;
 import com.torqline.common.events.RepairOrderEvents.PartQuantity;
 import com.torqline.common.events.RepairOrderEvents.PartsReservationRequested;
-import com.torqline.common.events.Topics;
 import com.torqline.common.messaging.OutboxWriter;
 import com.torqline.inventory.reservation.Reservation;
 import com.torqline.inventory.reservation.ReservationLine;
@@ -71,7 +72,7 @@ class InventoryServiceTest {
         assertThat(plug.getReserved()).isEqualTo(2);
         verify(reservations).save(any(Reservation.class));
         ArgumentCaptor<Object> event = ArgumentCaptor.forClass(Object.class);
-        verify(outbox).append(eq(Topics.INVENTORY_EVENTS), eq("Reservation"), eq(request.repairOrderId()), event.capture());
+        verify(outbox).append(eq(Topics.INVENTORY_EVENTS), eq(AggregateTypes.RESERVATION), eq(request.repairOrderId()), event.capture());
         PartsReserved reserved = (PartsReserved) event.getValue();
         assertThat(reserved.lines()).extracting(l -> l.sku() + "@" + l.unitPrice())
                 .containsExactlyInAnyOrder("OIL-10W30-1L@450", "SPARK-PLUG-BIKE@150");
@@ -89,7 +90,7 @@ class InventoryServiceTest {
         assertThat(chain.getReserved()).isZero();
         verify(reservations, never()).save(any());
         ArgumentCaptor<Object> event = ArgumentCaptor.forClass(Object.class);
-        verify(outbox).append(eq(Topics.INVENTORY_EVENTS), eq("Reservation"), any(), event.capture());
+        verify(outbox).append(eq(Topics.INVENTORY_EVENTS), eq(AggregateTypes.RESERVATION), any(), event.capture());
         assertThat(((PartsReservationFailed) event.getValue()).reason()).isEqualTo("CHAIN-KIT needs 2, only 1 available");
     }
 
@@ -140,7 +141,7 @@ class InventoryServiceTest {
         assertThat(plug.getReserved()).isZero();
         assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONSUMED);
         ArgumentCaptor<Object> event = ArgumentCaptor.forClass(Object.class);
-        verify(outbox).append(eq(Topics.INVENTORY_EVENTS), eq("Part"), eq(DEALER + ":SPARK-PLUG-BIKE"), event.capture());
+        verify(outbox).append(eq(Topics.INVENTORY_EVENTS), eq(AggregateTypes.PART), eq(DEALER + ":SPARK-PLUG-BIKE"), event.capture());
         assertThat(event.getValue()).isEqualTo(new PartLowStock(DEALER, "SPARK-PLUG-BIKE", "spark-plug-bike", 2, 2));
     }
 

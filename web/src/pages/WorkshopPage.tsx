@@ -1,25 +1,17 @@
 import { useMemo, useState } from 'react';
-import { api, type Appointment, type Dealer, type Part, type RepairOrder, type RepairOrderStatus } from '../api';
+import { api, type Appointment, type Dealer, type Part, type RepairOrder } from '../api';
 import { VehicleIcon } from '../components/Icons';
 import { InvoiceView } from '../components/InvoiceView';
 import { Modal } from '../components/Modal';
+import { BOARD_COLUMNS, BOOKING_DAYS_AHEAD, MAX_PART_QUANTITY, POLL_INTERVAL_MS, TECHNICIANS } from '../constants';
 import { dayLabel, humanize, isoDate, nextDays, rupees, timeOf } from '../format';
 import { usePolling } from '../hooks';
 
-const TECHNICIANS = ['Ravi K', 'Imran S', 'Priya N', 'Arjun M'];
-
-const COLUMNS: { status: RepairOrderStatus; title: string; hint: string }[] = [
-  { status: 'OPEN', title: 'Checked in', hint: 'Waiting for a technician' },
-  { status: 'IN_PROGRESS', title: 'In progress', hint: 'On the lift or stand' },
-  { status: 'PARTS_PENDING', title: 'Waiting for parts', hint: 'Inventory is reserving stock' },
-  { status: 'COMPLETED', title: 'Ready for pickup', hint: 'Invoiced' },
-];
-
 export function WorkshopPage({ dealer }: { dealer: Dealer }) {
-  const days = useMemo(() => nextDays(8), []);
+  const days = useMemo(() => nextDays(BOOKING_DAYS_AHEAD), []);
   const [date, setDate] = useState(isoDate(days[1]));
-  const appointments = usePolling(() => api.appointments(dealer.id, date), 3000, [dealer.id, date]);
-  const orders = usePolling(() => api.repairOrders(dealer.id), 1500, [dealer.id]);
+  const appointments = usePolling(() => api.appointments(dealer.id, date), POLL_INTERVAL_MS.appointments, [dealer.id, date]);
+  const orders = usePolling(() => api.repairOrders(dealer.id), POLL_INTERVAL_MS.repairOrders, [dealer.id]);
   const [error, setError] = useState<string | null>(null);
   const [partsFor, setPartsFor] = useState<RepairOrder | null>(null);
   const [invoiceFor, setInvoiceFor] = useState<RepairOrder | null>(null);
@@ -82,7 +74,7 @@ export function WorkshopPage({ dealer }: { dealer: Dealer }) {
           <p className="muted small">Updates live. Parts requests are handled asynchronously by the inventory service over Kafka.</p>
         </div>
         <div className="board">
-          {COLUMNS.map((col) => {
+          {BOARD_COLUMNS.map((col) => {
             const items = (orders.data ?? []).filter((o) => o.status === col.status);
             return (
               <div key={col.status} className={`column col-${col.status.toLowerCase()}`}>
@@ -191,11 +183,11 @@ function JobCard({ o, act, onParts, onInvoice }: {
 function PartsPicker({ order, onClose, onSubmit }: {
   order: RepairOrder; onClose: () => void; onSubmit: (lines: { sku: string; quantity: number }[]) => void;
 }) {
-  const { data: parts } = usePolling(() => api.parts(order.dealerId, order.vehicleType), 5000, [order.id]);
+  const { data: parts } = usePolling(() => api.parts(order.dealerId, order.vehicleType), POLL_INTERVAL_MS.partsPicker, [order.id]);
   const [qty, setQty] = useState<Record<string, number>>({});
   const lines = Object.entries(qty).filter(([, q]) => q > 0).map(([sku, quantity]) => ({ sku, quantity }));
   const total = lines.reduce((sum, l) => sum + (parts?.find((p) => p.sku === l.sku)?.unitPrice ?? 0) * l.quantity, 0);
-  const set = (p: Part, q: number) => setQty({ ...qty, [p.sku]: Math.max(0, Math.min(q, 20)) });
+  const set = (p: Part, q: number) => setQty({ ...qty, [p.sku]: Math.max(0, Math.min(q, MAX_PART_QUANTITY)) });
 
   return (
     <Modal title={`Parts for ${order.roNumber} · ${order.vehicleNumber}`} onClose={onClose}

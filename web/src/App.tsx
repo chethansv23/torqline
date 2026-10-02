@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, type Dealer } from './api';
 import { ActivityDrawer } from './components/ActivityDrawer';
+import { DEALER_STORAGE_KEY, POLL_INTERVAL_MS, TABS } from './constants';
 import { BellIcon, Logo } from './components/Icons';
 import { BookPage } from './pages/BookPage';
 import { InventoryPage } from './pages/InventoryPage';
@@ -8,17 +9,12 @@ import { InvoicePage } from './pages/InvoicePage';
 import { WorkshopPage } from './pages/WorkshopPage';
 import { usePolling } from './hooks';
 
-const TABS = [
-  { id: 'book', label: 'Book service', who: 'Customer' },
-  { id: 'workshop', label: 'Workshop', who: 'Service advisor' },
-  { id: 'inventory', label: 'Inventory', who: 'Parts desk' },
-] as const;
 type Tab = (typeof TABS)[number]['id'];
 
 const tabFromHash = (): Tab => (TABS.find((t) => `#/${t.id}` === location.hash)?.id ?? 'book');
 
 function readDealer() {
-  try { return localStorage.getItem('torqline.dealer'); } catch { return null; }
+  try { return localStorage.getItem(DEALER_STORAGE_KEY); } catch { return null; }
 }
 
 /** #/invoice/<id> or #/invoice/<id>?print */
@@ -44,7 +40,7 @@ function Shell() {
   const [drawer, setDrawer] = useState(false);
   const [seen, setSeen] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const messages = usePolling(() => api.notifications(40), 3000, []);
+  const messages = usePolling(() => api.notifications(), POLL_INTERVAL_MS.notificationBadge, []);
 
   useEffect(() => {
     const onHash = () => setTab(tabFromHash());
@@ -57,7 +53,7 @@ function Shell() {
   }, []);
 
   useEffect(() => {
-    if (dealerId) try { localStorage.setItem('torqline.dealer', dealerId); } catch { /* private mode */ }
+    if (dealerId) try { localStorage.setItem(DEALER_STORAGE_KEY, dealerId); } catch { /* private mode */ }
   }, [dealerId]);
 
   const dealer = dealers.find((d) => d.id === dealerId) ?? dealers[0];

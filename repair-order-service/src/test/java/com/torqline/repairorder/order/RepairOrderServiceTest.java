@@ -1,5 +1,7 @@
 package com.torqline.repairorder.order;
 
+import com.torqline.common.constants.AggregateTypes;
+import com.torqline.common.constants.Topics;
 import com.torqline.common.domain.ServiceType;
 import com.torqline.common.domain.VehicleType;
 import com.torqline.common.events.AppointmentEvents.AppointmentCheckedIn;
@@ -9,7 +11,6 @@ import com.torqline.common.events.RepairOrderEvents.PartsReservationRequested;
 import com.torqline.common.events.RepairOrderEvents.RepairOrderCancelled;
 import com.torqline.common.events.RepairOrderEvents.RepairOrderCompleted;
 import com.torqline.common.events.RepairOrderEvents.RepairOrderCreated;
-import com.torqline.common.events.Topics;
 import com.torqline.common.messaging.OutboxWriter;
 import com.torqline.common.web.ApiException;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static com.torqline.repairorder.constants.RepairOrderConstants.RO_NUMBER_SEQUENCE_QUERY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -54,13 +56,13 @@ class RepairOrderServiceTest {
 
     private Object lastEvent() {
         ArgumentCaptor<Object> event = ArgumentCaptor.forClass(Object.class);
-        verify(outbox).append(eq(Topics.REPAIR_ORDER_EVENTS), eq("RepairOrder"), any(), event.capture());
+        verify(outbox).append(eq(Topics.REPAIR_ORDER_EVENTS), eq(AggregateTypes.REPAIR_ORDER), any(), event.capture());
         return event.getValue();
     }
 
     @Test
     void checkInOpensNumberedRepairOrderAndAnnouncesIt() {
-        when(jdbc.queryForObject("select nextval('ro_number_seq')", Long.class)).thenReturn(1042L);
+        when(jdbc.queryForObject(RO_NUMBER_SEQUENCE_QUERY, Long.class)).thenReturn(1042L);
         when(orders.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         service.openFromCheckIn(checkIn());

@@ -8,14 +8,16 @@ import com.torqline.common.events.RepairOrderEvents.RepairOrderCompleted;
 import com.torqline.common.events.RepairOrderEvents.RepairOrderCreated;
 
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-/** Customer-facing copy. Times are shown in IST because all seeded dealers are in Bengaluru. */
+import static com.torqline.notification.constants.NotificationConstants.DISPLAY_ZONE;
+import static com.torqline.notification.constants.NotificationConstants.MESSAGE_DATE_TIME_PATTERN;
+
+/** Customer-facing copy. */
 final class MessageTemplates {
 
-    private static final DateTimeFormatter WHEN = DateTimeFormatter.ofPattern("EEE d MMM, h:mm a")
-            .withZone(ZoneId.of("Asia/Kolkata"));
+    private static final DateTimeFormatter WHEN = DateTimeFormatter.ofPattern(MESSAGE_DATE_TIME_PATTERN)
+            .withZone(DISPLAY_ZONE);
 
     private MessageTemplates() {
     }

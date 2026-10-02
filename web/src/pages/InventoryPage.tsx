@@ -1,20 +1,17 @@
 import { useState } from 'react';
 import { api, type Dealer, type Fitment } from '../api';
+import { FITMENT_FILTERS, POLL_INTERVAL_MS, RESTOCK_QUANTITY } from '../constants';
 import { rupees } from '../format';
 import { usePolling } from '../hooks';
 
-const FILTERS: { value?: Fitment; label: string }[] = [
-  { label: 'All' }, { value: 'CAR', label: 'Car' }, { value: 'BIKE', label: 'Bike' }, { value: 'UNIVERSAL', label: 'Universal' },
-];
-
 export function InventoryPage({ dealer }: { dealer: Dealer }) {
   const [filter, setFilter] = useState<Fitment | undefined>();
-  const { data, refresh } = usePolling(() => api.parts(dealer.id), 3000, [dealer.id]);
+  const { data, refresh } = usePolling(() => api.parts(dealer.id), POLL_INTERVAL_MS.inventory, [dealer.id]);
   const parts = (data ?? []).filter((p) => !filter || p.fitment === filter);
   const low = (data ?? []).filter((p) => p.lowStock).length;
 
   async function restock(sku: string) {
-    await api.restock(dealer.id, sku, 10);
+    await api.restock(dealer.id, sku, RESTOCK_QUANTITY);
     refresh();
   }
 
@@ -29,7 +26,7 @@ export function InventoryPage({ dealer }: { dealer: Dealer }) {
             </p>
           </div>
           <div className="chips">
-            {FILTERS.map((f) => (
+            {FITMENT_FILTERS.map((f) => (
               <button key={f.label} className={`chip ${filter === f.value ? 'active' : ''}`} onClick={() => setFilter(f.value)}>{f.label}</button>
             ))}
           </div>
@@ -56,7 +53,7 @@ export function InventoryPage({ dealer }: { dealer: Dealer }) {
                     <span className="muted tiny">{p.onHand} on hand{p.reserved > 0 && ` · ${p.reserved} reserved`}</span>
                   </td>
                   <td className="right"><strong className={p.available === 0 ? 'text-danger' : p.lowStock ? 'text-warn' : ''}>{p.available}</strong></td>
-                  <td className="right"><button className="btn sm" onClick={() => restock(p.sku)}>+10</button></td>
+                  <td className="right"><button className="btn sm" onClick={() => restock(p.sku)}>+{RESTOCK_QUANTITY}</button></td>
                 </tr>
               );
             })}

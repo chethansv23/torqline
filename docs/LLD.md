@@ -4,17 +4,23 @@
 
 ```
 torqline-common            shared contracts and plumbing, no business logic
+  constants/               Topics, EventHeaders, AggregateTypes, ApiHeaders, ErrorCodes
   domain/                  VehicleType (labour rate), ServiceType (duration per vehicle type)
-  events/                  event records + topic names
+  events/                  event records
   messaging/               OutboxWriter, OutboxRelay, IdempotencyGuard, InboundEvent
   web/                     ApiException + RFC 9457 problem responses
   config/                  Spring Boot auto-configuration that wires the above into every service
-appointment-service        dealer/, appointment/, slot/ (pure availability logic + Redis cache)
-repair-order-service       order/ (aggregate + state machine), messaging/
-parts-inventory-service    part/, reservation/, messaging/
-notification-service       templates, sender port, listener
-gateway                    Spring Cloud Gateway routes + request-id filter
+appointment-service        dealer/, appointment/, slot/ (pure availability logic + Redis cache),
+                           constants/ (lock namespace, SQL states, cache key, error codes), dto/
+repair-order-service       order/ (aggregate + state machine), messaging/, constants/ (GST, RO number), dto/
+parts-inventory-service    part/, reservation/, messaging/, constants/ (error codes), dto/
+notification-service       templates, sender port, listener, constants/ (manager email, display zone)
+gateway                    Spring Cloud Gateway routes + request-id filter, constants/
+web/src                    pages/, components/, constants/ (tabs, polling, board columns, filters, API)
 ```
+
+Convention: values that would otherwise be repeated or "magic" live in the module's `constants` package
+(`web/src/constants` for the UI), and request/response records live in `dto`, never nested in controllers.
 
 ## 2. Domain rules: cars vs bikes
 

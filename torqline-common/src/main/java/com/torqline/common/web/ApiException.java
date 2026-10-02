@@ -1,5 +1,6 @@
 package com.torqline.common.web;
 
+import com.torqline.common.constants.ErrorCodes;
 import org.springframework.http.HttpStatus;
 
 /** Business error that maps to an RFC 9457 problem response with a stable machine-readable code. */
@@ -15,7 +16,7 @@ public class ApiException extends RuntimeException {
     }
 
     public static ApiException notFound(String what, Object id) {
-        return new ApiException(HttpStatus.NOT_FOUND, "NOT_FOUND", what + " " + id + " not found");
+        return new ApiException(HttpStatus.NOT_FOUND, ErrorCodes.NOT_FOUND, what + " " + id + " not found");
     }
 
     public static ApiException badRequest(String code, String message) {

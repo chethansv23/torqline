@@ -3,6 +3,8 @@ package com.torqline.appointment.appointment;
 import com.torqline.appointment.dealer.Dealer;
 import com.torqline.appointment.dealer.DealerRepository;
 import com.torqline.appointment.dealer.ServiceBayRepository;
+import com.torqline.appointment.dto.BookAppointmentRequest;
+import com.torqline.appointment.dto.BookingResult;
 import com.torqline.appointment.slot.BusySlotCache;
 import com.torqline.common.domain.ServiceType;
 import com.torqline.common.domain.VehicleType;
@@ -130,7 +132,7 @@ class AppointmentServiceTest {
                 Instant.parse("2030-01-07T04:30:00Z"), Instant.parse("2030-01-07T05:00:00Z"), "key-1");
         when(appointments.findByIdempotencyKey("key-1")).thenReturn(Optional.of(existing));
 
-        AppointmentService.BookingResult result = service.book(request, "key-1");
+        BookingResult result = service.book(request, "key-1");
 
         assertThat(result.replayed()).isTrue();
         assertThat(result.appointment().id()).isEqualTo(existing.getId());

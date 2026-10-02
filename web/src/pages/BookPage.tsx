@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api, type Appointment, type Availability, type Bay, type Dealer, type ServiceTypeInfo, type Slot, type VehicleType } from '../api';
 import { VehicleIcon } from '../components/Icons';
+import { BOOKING_DAYS_AHEAD } from '../constants';
 import { dayLabel, humanize, isoDate, nextDays, time12, timeOf } from '../format';
 
 const emptyForm = { customerName: '', customerPhone: '', vehicleNumber: '', vehicleMake: '', vehicleModel: '', notes: '' };
@@ -9,7 +10,7 @@ export function BookPage({ dealer }: { dealer: Dealer }) {
   const [vehicle, setVehicle] = useState<VehicleType>('BIKE');
   const [catalog, setCatalog] = useState<ServiceTypeInfo[]>([]);
   const [service, setService] = useState('GENERAL_SERVICE');
-  const days = useMemo(() => nextDays(8), []);
+  const days = useMemo(() => nextDays(BOOKING_DAYS_AHEAD), []);
   const [date, setDate] = useState(isoDate(days[1]));
   const [availability, setAvailability] = useState<Availability | null>(null);
   const [slot, setSlot] = useState<Slot | null>(null);

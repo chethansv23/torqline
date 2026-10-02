@@ -13,6 +13,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 
+import static com.torqline.appointment.constants.AppointmentConstants.BUSY_SLOTS_CACHE_KEY_PREFIX;
+
 /**
  * Read-through Redis cache of a dealer's booked intervals for one day. Availability is the hottest
  * read path (every customer browsing slots), while bookings are comparatively rare.
@@ -75,6 +77,6 @@ public class BusySlotCache {
     }
 
     private static String key(String dealerId, LocalDate date) {
-        return "torqline:busy:" + dealerId + ":" + date;
+        return BUSY_SLOTS_CACHE_KEY_PREFIX + dealerId + ":" + date;
     }
 }

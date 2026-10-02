@@ -1,4 +1,5 @@
 import type { Dealer, RepairOrder } from '../api';
+import { GST_LABEL } from '../constants';
 import { humanize, rupees } from '../format';
 
 /** The invoice body, shared by the preview dialog and the printable invoice page. */
@@ -38,7 +39,7 @@ export function InvoiceView({ order, dealer }: { order: RepairOrder; dealer?: De
         </tbody>
         <tfoot>
           <tr><td colSpan={3} className="right">Subtotal</td><td className="right">{rupees(subtotal)}</td></tr>
-          <tr><td colSpan={3} className="right">GST 18%</td><td className="right">{rupees(order.taxAmount)}</td></tr>
+          <tr><td colSpan={3} className="right">{GST_LABEL}</td><td className="right">{rupees(order.taxAmount)}</td></tr>
           <tr className="grand"><td colSpan={3} className="right">Total</td><td className="right">{rupees(order.totalAmount)}</td></tr>
         </tfoot>
       </table>

@@ -1,5 +1,7 @@
-package com.torqline.appointment.appointment;
+package com.torqline.appointment.dto;
 
+import com.torqline.appointment.appointment.Appointment;
+import com.torqline.appointment.appointment.AppointmentStatus;
 import com.torqline.common.domain.ServiceType;
 import com.torqline.common.domain.VehicleType;
 

@@ -9,13 +9,13 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.torqline.appointment.constants.AppointmentConstants.SLOT_STEP;
+
 /**
  * Pure availability calculation on a fixed 30-minute grid. Kept free of Spring and the database
  * so the rules are easy to unit test.
  */
 public final class SlotGrid {
-
-    public static final Duration STEP = Duration.ofMinutes(30);
 
     public record Slot(LocalTime start, LocalTime end, int freeBays) {
     }
@@ -24,7 +24,7 @@ public final class SlotGrid {
     }
 
     public static boolean isOnGrid(LocalTime time) {
-        return time.getSecond() == 0 && time.getNano() == 0 && time.getMinute() % STEP.toMinutes() == 0;
+        return time.getSecond() == 0 && time.getNano() == 0 && time.getMinute() % SLOT_STEP.toMinutes() == 0;
     }
 
     /**
@@ -36,7 +36,7 @@ public final class SlotGrid {
                                      List<Long> bayIds, List<BusyInterval> busy, Instant now) {
         List<Slot> slots = new ArrayList<>();
         long window = Duration.between(open, close).toMinutes();
-        for (long offset = 0; offset + duration.toMinutes() <= window; offset += STEP.toMinutes()) {
+        for (long offset = 0; offset + duration.toMinutes() <= window; offset += SLOT_STEP.toMinutes()) {
             LocalTime t = open.plusMinutes(offset);
             Instant start = ZonedDateTime.of(date, t, zone).toInstant();
             Instant end = start.plus(duration);

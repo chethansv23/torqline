@@ -1,5 +1,8 @@
 package com.torqline.appointment.dealer;
 
+import com.torqline.appointment.dto.BayView;
+import com.torqline.appointment.dto.DealerView;
+import com.torqline.appointment.dto.ServiceTypeView;
 import com.torqline.common.domain.ServiceType;
 import com.torqline.common.domain.VehicleType;
 import com.torqline.common.web.ApiException;
@@ -8,7 +11,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -17,16 +19,6 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/dealers")
 public class DealerController {
-
-    public record BayView(Long id, String name, VehicleType vehicleType) {
-    }
-
-    public record DealerView(String id, String name, String city, String timezone, LocalTime openTime,
-                             LocalTime closeTime, Map<VehicleType, Long> bayCount) {
-    }
-
-    public record ServiceTypeView(ServiceType code, String description, Map<VehicleType, Long> durationMinutes) {
-    }
 
     private final DealerRepository dealers;
     private final ServiceBayRepository bays;

@@ -1,5 +1,6 @@
 package com.torqline.common.web;
 
+import com.torqline.common.constants.ErrorCodes;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -48,7 +49,7 @@ public class ApiExceptionHandler {
 
     private static ProblemDetail validationProblem(Map<String, String> errors) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Request validation failed");
-        problem.setProperty("code", "VALIDATION_FAILED");
+        problem.setProperty("code", ErrorCodes.VALIDATION_FAILED);
         problem.setProperty("errors", errors);
         return problem;
     }
@@ -57,7 +58,7 @@ public class ApiExceptionHandler {
     public ProblemDetail handleOptimisticLock(OptimisticLockingFailureException e) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
                 "The resource was modified concurrently, please retry");
-        problem.setProperty("code", "CONCURRENT_MODIFICATION");
+        problem.setProperty("code", ErrorCodes.CONCURRENT_MODIFICATION);
         return problem;
     }
 }

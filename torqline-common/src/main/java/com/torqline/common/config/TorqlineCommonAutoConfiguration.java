@@ -1,6 +1,6 @@
 package com.torqline.common.config;
 
-import com.torqline.common.events.Topics;
+import com.torqline.common.constants.Topics;
 import com.torqline.common.messaging.IdempotencyGuard;
 import com.torqline.common.messaging.OutboxRelay;
 import com.torqline.common.messaging.OutboxWriter;

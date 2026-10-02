@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, type Dealer, type RepairOrder } from '../api';
 import { InvoiceView } from '../components/InvoiceView';
+import { AUTO_PRINT_DELAY_MS } from '../constants';
 
 /**
  * Stand-alone invoice at #/invoice/<id>. Printing a dedicated page is far more reliable than printing
@@ -23,7 +24,7 @@ export function InvoicePage({ id, autoPrint }: { id: string; autoPrint: boolean 
   const ready = order !== null && dealer !== undefined;
   useEffect(() => {
     if (ready && autoPrint) {
-      const timer = setTimeout(() => window.print(), 300);
+      const timer = setTimeout(() => window.print(), AUTO_PRINT_DELAY_MS);
       return () => clearTimeout(timer);
     }
   }, [ready, autoPrint]);
